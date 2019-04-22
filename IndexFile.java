@@ -111,7 +111,6 @@ public class IndexFile {
 	      IndexReader indexreader = DirectoryReader.open(writer);
 	      System.out.println("The Number of Docs in this Index is :" + indexreader.numDocs());
 	      IndexSearcher indexsearcher = new IndexSearcher(indexreader);
-	      //System.out.println(indexsearcher.toString());
 	      //System.exit(1);
 	      //QueryParser q = new QueryParser("city", analyzer).parse("Phoenix");
 	      //TermQuery query = new TermQuery(new Term("city","Charlotte"));
@@ -211,43 +210,7 @@ public class IndexFile {
 				
 				jsonObject = new JSONObject(line);
 		
-	      //String name = (String) obj.get("text");
-				//System.out.println("i am before if");
-				/*if(file.getFileName().toString().equals("business.json")) {
-					//System.out.println("i am in");
-					city = (String) jsonObject.get("city");
-					doc.add(new TextField("city",city,  Field.Store.YES));
-					
-					business_id = (String) jsonObject.get("business_id");
-					//System.out.println();
-				    doc.add(new TextField("id",business_id,  Field.Store.YES));
-				    
-				    review_count = (int) jsonObject.get("review_count");
-					//System.out.println();
-				    doc.add(new StoredField("review_count",review_count));
-				    //System.out.println("the review_count : " + review_count + " these are the fields: " + doc.getFields());
-				    //System.exit(1);
-				}
-				//System.exit(1);
-				else {
-					//System.out.println("this is the file called " + file.getFileName().toString());
-					review_id = (String) jsonObject.getString("review_id");
-					doc.add(new TextField("review_id",review_id, Field.Store.YES));
-					
-					business_id = (String) jsonObject.get("business_id");
-					//System.out.println();
-				    doc.add(new TextField("id",business_id,  Field.Store.YES));
-				    
-				    //System.exit(1);
-				}*/
-		//Object Entities = obj.getJSONObject("attributes");
-		
-	      //JSONParser parser = new JSONParser();
-	      //Object obj = parser.parse(line);
-	      
-	      //.out.println(doc.getFields());
-	      //System.exit(1);
-	      
+	        
 	      // Use a LongPoint that is indexed (i.e. efficiently filterable with
 	      // PointRangeQuery).  This indexes to milli-second resolution, which
 	      // is often too fine.  You could instead create a number based on
