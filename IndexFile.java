@@ -54,13 +54,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/*"C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Index";
-String dataDir = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Data3";*/
 public class IndexFile {
 	
 	private IndexFile() {}
 	
 	public static void main(String args[]) throws ParseException {
+		
 		String indexPath = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Index";
 				
 		String docsPath = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Data3";
@@ -75,11 +74,14 @@ public class IndexFile {
 		     System.out.println("Document directory '" +docDir.toAbsolutePath()+ "' does not exist or is not readable, please check the path");
 		     System.exit(1);
 		}
-		//final Path reviewsDir = Paths.get(reviewsPath);
-		//if (!Files.isReadable(reviewsDir)) {
-		 //    System.out.println("Document directory '" +docDir.toAbsolutePath()+ "' does not exist or is not readable, please check the path");
-		 //    System.exit(1);
-		//}
+		
+		/*
+		final Path reviewsDir = Paths.get(reviewsPath);
+		if (!Files.isReadable(reviewsDir)) {
+		    System.out.println("Document directory '" +docDir.toAbsolutePath()+ "' does not exist or is not readable, please check the path");
+		    System.exit(1);
+		}
+		*/
 		
 		Date start = new Date();
 	    try {
@@ -183,13 +185,35 @@ public class IndexFile {
 	
 	static void indexDoc(IndexWriter writer, Path file, long lastModified) throws IOException {
 	    try (InputStream stream = Files.newInputStream(file)) {
-	      // make a new, empty document
+	    	// make a new, empty document
 	        //System.out.println("at " + file);
-	    	//FOREACH FILE IN THE DIRECTORY CREATE DOCUMENTS TOO REVIEWS.JSON
-	    	  FileReader Efile=new FileReader(file.toString());
+	    	//FOREACH FILE IN THE DIRECTORY CREATE DOCUMENTS
+	    	
+	    	  	FileReader Efile=new FileReader(file.toString());
 				BufferedReader br = new BufferedReader(Efile);
 				String line;
-				System.out.println();
+				
+			//BUSINESSDOCS FIELDS
+				
+				String name = null;
+				String city = null;
+				String categories  = null;
+				int review_count;
+				int stars;
+				
+			//REVIEWDOCS FIELDS
+				
+				//String review_id = null;
+				
+			//TIPDOCS FIELDS
+				
+				//String text = null;
+				
+			//SHARED & TIPDOCS & REVIEWDOCS FIELDS 
+				
+				String business_id = null;
+				String text = null;
+				
 				
 		while((line=br.readLine())!=null){
 				Document doc = new Document();
@@ -198,19 +222,18 @@ public class IndexFile {
 	      // field that is indexed (i.e. searchable), but don't tokenize
 	      // the field into separate words and don't index term frequency
 	      // or positional information:
+				
+	      
+			//JSONOBJECT
+				
+				JSONObject jsonObject = null;
+				jsonObject = new JSONObject(line);
+			
+			//SHARED FIELD
+				
 				Field pathField = new StringField("path", file.toString(), Field.Store.YES);
 				doc.add(pathField);
-	      
-				JSONObject jsonObject = null;
-				String city = null;
-				String business_id = null;
-				int review_count;
-				int stars;
-				String review_id = null;
 				
-				jsonObject = new JSONObject(line);
-		
-	        
 	      // Use a LongPoint that is indexed (i.e. efficiently filterable with
 	      // PointRangeQuery).  This indexes to milli-second resolution, which
 	      // is often too fine.  You could instead create a number based on
@@ -219,48 +242,66 @@ public class IndexFile {
 	      // February 17, 2011, 2-3 PM.
 			    //doc.add(new LongPoint("modified", lastModified));
 			    //doc.add(new TextField("contents", new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))));
-	      //System.out.println(doc.getFields());
-			    //System.out.println(line);
-	      //System.exit(1);
+				//System.out.println(doc.getFields());
 	      
 	            if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
-	              // New index, so we just add the document (no old document can be there):
+	            	// New index, so we just add the document (no old document can be there):
 	            	//System.out.println("adding " + file);
 	            	if(file.getFileName().toString().equals("business.json")) {
-						//System.out.println("i am in");
+						//System.out.println(jsonObject.get("categories").toString());
+	            		name = (String) jsonObject.get("name");
+					    doc.add(new TextField("name",name,  Field.Store.YES));
+
+	            		business_id = (String) jsonObject.get("business_id");
+					    doc.add(new TextField("business_id",business_id,  Field.Store.YES));
+					    
 						city = (String) jsonObject.get("city");
 						doc.add(new TextField("city",city,  Field.Store.YES));
 						
-						business_id = (String) jsonObject.get("business_id");
-						//System.out.println();
-					    doc.add(new TextField("id",business_id,  Field.Store.YES));
+						if(jsonObject.get("categories") == null){
+							categories = (String) jsonObject.get("categories");
+							doc.add(new TextField("categories",categories,  Field.Store.YES));
+						}
+						else{
+							doc.add(new TextField("categories","no category",  Field.Store.YES));
+						}
+						/*if (!categories.isEmpty()) {
+							doc.add(new TextField("categories",categories,  Field.Store.YES));
+						}
+						else {
+							doc.add(new TextField("categories","no category",  Field.Store.YES));
+						}*/
 					    
 					    review_count = (int) jsonObject.get("review_count");
-						//System.out.println();
 					    doc.add(new StoredField("review_count",review_count));
+					    
 					    //System.out.println("the review_count : " + review_count + " these are the fields: " + doc.getFields());
 					    //System.exit(1);
 					}
 					//System.exit(1);
-					else {
-						business_id =(String) jsonObject.getString("business_id");
-						//if(business_id)
-						//System.out.println("this is the file called " + file.getFileName().toString());
-						review_id = (String) jsonObject.getString("review_id");
-						doc.add(new TextField("review_id",review_id, Field.Store.YES));
+					else if(file.getFileName().toString().equals("review.json")) {
+						
+						text = (String) jsonObject.getString("text");
+						doc.add(new TextField("text",text, Field.Store.YES));
 						
 						business_id = (String) jsonObject.get("business_id");
-						//System.out.println(jsonObject.toString());
-					    doc.add(new TextField("id",business_id,  Field.Store.YES));
+					    doc.add(new TextField("business_id",business_id,  Field.Store.YES));
 					    
 					    stars = (int) jsonObject.getInt("stars");
 					    doc.add(new IntPoint("stars",stars));
 					    //doc.add(new TextField("stars",stars,Field.Store.YES));
-					    
-					    //System.out.println(doc.toString());
-					    //System.exit(1);
 					}
+					else {
+						
+						business_id =(String) jsonObject.getString("business_id");
+						doc.add(new TextField("review_id",business_id, Field.Store.YES));
+						
+						text = (String) jsonObject.getString("text");
+						doc.add(new TextField("text",text, Field.Store.YES));
+					}
+	            	
 	            	writer.addDocument(doc);
+	            	
 	            } else {
 	              // Existing index (an old copy of this document may have been indexed) so 
 	              // we use updateDocument instead to replace the old one matching the exact 
