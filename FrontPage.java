@@ -26,40 +26,47 @@ public class FrontPage {
 	
 	public static void main(String[] args) throws IOException, ParseException {
 		
-		JFrame window = new JFrame();
+		JFrame applicationFrame = new JFrame();
 		JButton button = new JButton("Search");//creating instance of JButton  
 		JTextField textField = new JTextField();
+		JTextField suggestionField = new JTextField();
 		
 		
-		window.setTitle("	Searchy");
-		window.setBounds(100,100,1200,772);
-		window.setBackground(Color.BLACK);
-		window.getContentPane().setBackground(new Color(77, 209, 204));
+		applicationFrame.setTitle("	SEARCHY");
+		applicationFrame.setBounds(100,100,1200,772);
+		applicationFrame.setBackground(Color.BLACK);
+		applicationFrame.getContentPane().setBackground(new Color(77, 209, 204));
 		
-		
+		//Search textField 
 		textField.setBackground(new Color(255, 255, 255));
 		textField.setForeground(new Color(0, 0, 0));
 		textField.setBounds(10, 11, 731, 29);
-		window.getContentPane().add(textField);
+		applicationFrame.getContentPane().add(textField);
 		textField.setColumns(10);
+		//Suggestion textField
+		suggestionField.setBackground(new Color(255, 255, 255));
+		suggestionField.setForeground(new Color(0, 0, 0));
+		suggestionField.setBounds(10, 11, 731, 29);
+		applicationFrame.getContentPane().add(suggestionField);
+		suggestionField.setColumns(10);
 		
-		window.add(button);//adding button in JFrame  
+		applicationFrame.add(button);//adding button in JFrame  
 		          
-		window.setLayout(null);//using no layout managers  
-		window.setVisible(true);//making the frame visible 
+		applicationFrame.setLayout(null);//using no layout managers  
+		applicationFrame.setVisible(true);//making the frame visible 
 		
 		/*JLabel lblArrangeBy = new JLabel("Arrange by ");
 	    lblArrangeBy.setBounds(54, 101, 97, 14);
-	    window.getContentPane().add(lblArrangeBy);
+	    applicationFrame.getContentPane().add(lblArrangeBy);
 		
 		JTextField textField_1 = new JTextField();
 	    textField_1.setBounds(110, 59, 169, 20);
-	    window.getContentPane().add(textField_1);
+	    applicationFrame.getContentPane().add(textField_1);
 	    textField_1.setColumns(10);
 	    
 	    JLabel lblDidYouMean = new JLabel("Did You Mean:");
 	    lblDidYouMean.setBounds(10, 62, 90, 14);
-	    window.getContentPane().add(lblDidYouMean);*/
+	    applicationFrame.getContentPane().add(lblDidYouMean);*/
 		
 	    //DocumentListener listener = new DocumentListener()
 	    /*textField.addActionListener(new ActionListener() {
@@ -72,8 +79,22 @@ public class FrontPage {
 	    	
 	    });*/
 	    
+		DeferredDocumentListener listener = new DeferredDocumentListener(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Execute your required functionality here...
+            	try {
+            		suggestionField.setText(backDoor(textField.getText()).toLowerCase());
+					
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            	
+            }
+		}, true);
 	    
-	    
+	    /*
 	    textField.getDocument().addDocumentListener(new DocumentListener() {
 	    	String text = textField.getText();
             public void changedUpdate(DocumentEvent arg0) 
@@ -86,7 +107,7 @@ public class FrontPage {
             	//call the suggester
                 text = textField.getText();
                 System.out.println(text);
-                //window.setPrice(window.countTotalPrice(TabPanel.this));
+                //applicationFrame.setPrice(applicationFrame.countTotalPrice(TabPanel.this));
             }
 
             public void removeUpdate(DocumentEvent arg0) 
@@ -100,7 +121,7 @@ public class FrontPage {
                 //panel.setPrice(panel.countTotalPrice(TabPanel.this));
             }
 	    }); 
-	    
+	    */
 	    
 		Queries q = new Queries();
 		q.getStatistics();
