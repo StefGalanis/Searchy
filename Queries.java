@@ -51,6 +51,14 @@ public class Queries {
 		//analyzer.
 	}
 	
+	public IndexSearcher getSearcher() {
+		return this.indexsearcher;
+	}
+	
+	public Analyzer getAnalyzer() {
+		return this.analyzer;
+	}
+	
 	public void getStatistics() throws ParseException, IOException {
 		
 		System.out.println("i am in");
