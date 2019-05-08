@@ -22,6 +22,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.StringField;
@@ -199,7 +200,7 @@ public class IndexFile {
 				String city = null;
 				String categories  = null;
 				int review_count;
-				int stars;
+				double stars;
 				
 			//REVIEWDOCS FIELDS
 				
@@ -258,19 +259,37 @@ public class IndexFile {
 						city = (String) jsonObject.get("city");
 						doc.add(new TextField("city",city,  Field.Store.YES));
 						
-						if(jsonObject.get("categories") == null){
+						//System.out.println(jsonObject.get("categories").toString() +" |||| "+ jsonObject.get("stars").toString());
+						//System.exit(1);
+						//if(jsonObject.get("categories") == null){
+						//System.out.println(categories.isEmpty());
+						categories = (String) jsonObject.get("categories").toString();
+						//if(categories.isEmpty())
+						//System.out.println(categories);
+						
+							//System.exit(1);
+						if(!(categories.equals("null"))) {
 							categories = (String) jsonObject.get("categories");
+							categories = categories.replace(",", "");
 							doc.add(new TextField("categories",categories,  Field.Store.YES));
 						}
-						else{
+						else {
 							doc.add(new TextField("categories","no category",  Field.Store.YES));
+							//System.out.println("i got in with a false statement" + jsonObject.toString());
+							//System.exit(1);
 						}
+						//}
+						//else{
+						//	doc.add(new TextField("categories","no category",  Field.Store.YES));
+						//}
 						/*if (!categories.isEmpty()) {
 							doc.add(new TextField("categories",categories,  Field.Store.YES));
 						}
 						else {
 							doc.add(new TextField("categories","no category",  Field.Store.YES));
 						}*/
+						stars = (double) jsonObject.getDouble("stars");
+						doc.add(new DoublePoint("stars",stars));
 					    
 					    review_count = (int) jsonObject.get("review_count");
 					    doc.add(new StoredField("review_count",review_count));
@@ -287,8 +306,8 @@ public class IndexFile {
 						business_id = (String) jsonObject.get("business_id");
 					    doc.add(new TextField("business_id",business_id,  Field.Store.YES));
 					    
-					    stars = (int) jsonObject.getInt("stars");
-					    doc.add(new IntPoint("stars",stars));
+					    stars = (double) jsonObject.getDouble("stars");
+					    doc.add(new DoublePoint("stars",stars));
 					    //doc.add(new TextField("stars",stars,Field.Store.YES));
 					}
 					else {

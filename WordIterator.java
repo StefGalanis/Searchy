@@ -16,6 +16,11 @@ public class WordIterator implements InputIterator{
 	
 	private Iterator<Word> wordIterator;
 	private Word currentWord;
+	
+	WordIterator(Iterator<Word> wordIterator) {
+        this.wordIterator = wordIterator;
+    }
+
 
 	@Override
 	public Set<BytesRef> contexts() {

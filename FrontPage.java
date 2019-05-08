@@ -1,7 +1,9 @@
 package anakthsh;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
+import java.awt.ScrollPane;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,6 +19,7 @@ import java.io.ObjectInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -25,24 +28,36 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
@@ -59,21 +74,22 @@ public class FrontPage {
 	private static JTextField suggestionField;
 	//private FocusListener focuslistener;
 	private static JLabel titleLabel;
+	private static int flag;
+	private static JEditorPane editorPane;
 	
 	public FrontPage() {
+		
 		this.applicationFrame = new JFrame();
 		this.button = new JButton("Search");//creating instance of JButton  
 		this.textField = new JTextField();
 		this.suggestionField = new JTextField();
+		this.editorPane = new JEditorPane();
 		this.titleLabel = new JLabel("Find Stores In 'Phoenix'");
+		this.flag = 0;
 		
 	}
 	
 	private static void initialize() throws IOException {
-		//FocusListener focuslistener = new FocusListener();
-				
-				
-				//JPanel panel = new JPanel();
 				
 				
 				applicationFrame.setTitle("	Uptown World");
@@ -95,162 +111,232 @@ public class FrontPage {
 				applicationFrame.getContentPane().add(textField);
 				//Did you mean Label
 				JLabel lblDidYouMean = new JLabel("Did You Mean:");
-			    lblDidYouMean.setBounds(210, 100, 130, 40);
+			    lblDidYouMean.setBounds(210, 140, 130, 40);
 			    lblDidYouMean.setFont(new Font("Serif", Font.ITALIC, 20));
 			    lblDidYouMean.setForeground(Color.white);
 			    applicationFrame.getContentPane().add(lblDidYouMean);
 			    //Did you mean Field
 			    JLabel suggestionLabel = new JLabel("lorem ipsum");
-			    suggestionLabel.setBounds(340, 100, 150, 40);
+			    suggestionLabel.setBounds(340, 140, 150, 40);
 			    suggestionLabel.setFont(new Font("Serif", Font.BOLD, 20));
 			    suggestionLabel.setForeground(Color.white);
 			    applicationFrame.getContentPane().add(suggestionLabel);
 			    //Filters Label
-			    JLabel filterLabel = new JLabel("FILTERS");
+			    JLabel filterLabel = new JLabel("Arrange By");
 			    filterLabel.setBounds(50, 140, 110, 40);
-			    filterLabel.setFont(new Font("Serif", Font.BOLD, 25));
+			    filterLabel.setFont(new Font("Serif", Font.BOLD, 20));
 			    filterLabel.setForeground(Color.white);
 			    applicationFrame.getContentPane().add(filterLabel);
+			    //RadioButtons Label Search BY
+			    JLabel radioLabel = new JLabel("Search By:");
+			    radioLabel.setBounds(210, 100, 110, 40);
+			    radioLabel.setFont(new Font("Serif", Font.BOLD, 20));
+			    radioLabel.setForeground(Color.white);
+			    applicationFrame.getContentPane().add(radioLabel);
+			    //Choice buttons
+			    JCheckBox category = new JCheckBox("category");
+			    category.setBounds(320, 100, 100, 40);
+			    category.setFont(new Font("Serif", Font.BOLD, 20));
+			    category.setBackground(new Color(0, 114, 125));
+			    category.setForeground(Color.white);
+			    applicationFrame.getContentPane().add(category);
+			    JCheckBox text = new JCheckBox("text");
+			    text.setBounds(450, 100, 100, 40);
+			    text.setFont(new Font("Serif", Font.BOLD, 20));
+			    text.setBackground(new Color(0, 114, 125));
+			    text.setForeground(Color.white);
+			    applicationFrame.getContentPane().add(text);
+			    JCheckBox name = new JCheckBox("name");
+			    name.setBounds(550, 100, 100, 40);
+			    name.setFont(new Font("Serif", Font.BOLD, 20));
+			    name.setBackground(new Color(0, 114, 125));
+			    name.setForeground(Color.white);
+			    applicationFrame.getContentPane().add(name);
+				
 				//Search button
 				button.setBackground(Color.gray);
 				button.setForeground(new Color(0, 0, 0));
 				button.setBounds(950, 55, 150, 40);
 				button.setFont(new Font("Serif", Font.BOLD, 20));
+				applicationFrame.getRootPane().setDefaultButton(button);
 				applicationFrame.getContentPane().add(button);//adding button in JFrame
+				
 				button.addActionListener(new ActionListener() {
 
 					@Override
 					public void actionPerformed(ActionEvent arg0) {
-						
-						button.setText("Search Again");
+						JPanel view = new JPanel();
 						Queries q = null;
 						try {
 							q = new Queries();
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
+						
 						Analyzer analyzer = q.getAnalyzer();
 						IndexSearcher indexsearcher = q.getSearcher();
-						Query query = null;
+						
+						button.setText("Search Again");
+						
+						QueryParser categoryParser = new QueryParser("categories", analyzer);
+						QueryParser nameParser = new QueryParser("name", analyzer);
+						
+						Builder categoryQuery = new BooleanQuery.Builder();
+						
+						
+						Query catquery = null;
+						Query catQuery2 = null;
 						try {
-							query = new QueryParser("name", analyzer).parse("phoenix");
-						} catch (ParseException e) {
+							if(name.isSelected()) {
+								catQuery2 = nameParser.parse(textField.getText().toLowerCase());
+								categoryQuery.add(new BooleanClause(catQuery2, BooleanClause.Occur.MUST));
+							}
+							if(category.isSelected()) {
+								catquery = categoryParser.parse(textField.getText().toLowerCase());
+								categoryQuery.add(new BooleanClause(catquery, BooleanClause.Occur.MUST));
+							}
+						} catch (ParseException e1) {
 							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						//System.out.println(boolquery.clauses().toString());
+						BooleanQuery boolquery = categoryQuery.build();
+						/*
+						Builder bq = new BooleanQuery.Builder();
+						TermQuery catQuery1 = new TermQuery(new Term("categories", textField.getText().toLowerCase().toString()));
+						TermQuery catQuery2 = new TermQuery(new Term("name", "Parker"));
+						bq.add(new BooleanClause(boolquery, BooleanClause.Occur.MUST));
+						*/
+						System.out.println(textField.getText());
+						
+						
+						
+						
+						
+						//QueryParser categoryParser = new QueryParser("categories", analyzer);
+						QueryParser textParser = new QueryParser("text", analyzer);
+						Query query = null;
+						//String searchText = "name:" + textField.getText().toLowerCase() + " city:phoenix";
+						//System.out.println(searchText);
+						/*
+						try {
+						 
+							query = new QueryParser("name", analyzer).parse(searchText);
+						} catch (ParseException e) {
 							e.printStackTrace();
 						}
+						*/
 						TopDocs x = null;
 						try {
-							x = indexsearcher.search(query, 10);
+							x = indexsearcher.search(boolquery, 10);
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						JList list = new JList();
-						
+						System.out.println(boolquery.clauses().toString());
+						System.out.println(x.totalHits);
+						//System.exit(1);
+						//JList<Component> list = new JList();
 						String text = "";
-						for (int i = 0; i < 10; i++) {
-							Document doc = null;
-							try {
-								doc = indexsearcher.doc(x.scoreDocs[i].doc);
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+						if(x.totalHits.value != 0) {
+							for (int i = 0; i < x.totalHits.value; i++) {
+								
+								if(i == 10) {break;}
+								Document doc = null;
+								try {
+									doc = indexsearcher.doc(x.scoreDocs[i].doc);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								
+								String info =  "<h3>" + (String)doc.getField("name").stringValue() + "</h3>" +
+											"Location:  " + (String)doc.getField("city").stringValue() + "<br>"
+											 + "<font style=\" color:#83a7ff \"> " 
+											+"<strong>" + "categories: " + "</strong>" + (String)doc.getField("categories").stringValue()   + "<hr>";
+								//view.add(new textField())
+								text = text + info;
+								//JLabel tempLabel = new JLabel(info);
+								//list.add(tempLabel);
+								//list.add(x)
 							}
-							String name = (String)doc.getField("name").stringValue();
-							name = name + "\n";
-							text = text + name;
-							//JLabel tempLabel = new JLabel(name);
-							//list.add(tempLabel);
-							//list.add(x)
 						}
-						System.out.println(text);
-						JTextArea textarea = new JTextArea(text);
-						
-						JScrollPane scrollpane = new JScrollPane(textarea);
-						scrollpane.setBounds(210,140,892,500);
-					    applicationFrame.getContentPane().add(scrollpane);
+						else {
+							text = "NO RESULTS TRY AGAIN";
+						}
+						//System.out.println(list.getComponentCount());
+						editorPane.setEditable(false);
+						editorPane.setContentType("text/html");
+						editorPane.setText(text);
+						editorPane.setCaretPosition(0);
+						System.out.println(editorPane.getText().toString());
+						boolquery = null;
 						
 					}
 					
 				});
+				applicationFrame.getContentPane().add(button);
+				// Load Icon
 				String fileName = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\worldtown.jpg";
 				ImageIcon icon = null;
 				icon = new ImageIcon(fileName);
-				
-		        
+				// Add Icon
 		        JLabel label = new JLabel(icon);
 		        label.setBounds(38, 10, 128, 128);
 		        applicationFrame.getContentPane().add(label);
 		        applicationFrame.setIconImage(icon.getImage());
-				//applicationFrame.getContentPane().add(button);
-				//Suggestion textField
-				suggestionField.setBackground(new Color(255, 255, 255));
-				suggestionField.setForeground(new Color(0, 0, 0));
-				suggestionField.setBounds(10, 11, 731, 29);
-				//applicationFrame.getContentPane().add(suggestionField);
-				suggestionField.setColumns(10);
-				
-				applicationFrame.getContentPane().add(button);//adding button in JFrame  
-				          
+				// ScrollPane
+				JScrollPane scrollpane = new JScrollPane(editorPane);
+				scrollpane.setBounds(210,180,892,500);
+			    applicationFrame.getContentPane().add(scrollpane);
+			    
 				applicationFrame.setLayout(null);//using no layout managers  
 				applicationFrame.setVisible(true);//making the frame visible 
-
+				
 	}
 	
 	public static void main(String[] args) throws IOException, ParseException {
 		//BufferedImage image;
 		FrontPage GUI = new FrontPage();
 		GUI.initialize();
-		Queries q = new Queries();
-		Analyzer analyzer = q.getAnalyzer();
-		IndexSearcher indexsearcher = q.getSearcher();
-		Query query = new QueryParser("name", analyzer).parse("phoenix");
-		TopDocs x = indexsearcher.search(query, 10);
-		JList list = new JList();
-		
-		String text = "";
-		for (int i = 0; i < 10; i++) {
-			Document doc = indexsearcher.doc(x.scoreDocs[i].doc);
-			String name = (String)doc.getField("name").stringValue();
-			name = name + "\n";
-			text = text + name;
-			//JLabel tempLabel = new JLabel(name);
-			//list.add(tempLabel);
-			//list.add(x)
-		}
-		System.out.println(text);
-		JTextArea textarea = new JTextArea(text);
-		JScrollPane scrollpane = new JScrollPane(textarea);
-		scrollpane.setBounds(210,140,892,500);
-		applicationFrame.getContentPane().add(scrollpane);
-		//applicationFrame.flush();
-		//applicationFrame.paintComponents(g){};
-		/*JLabel lblArrangeBy = new JLabel("Arrange by ");
-	    lblArrangeBy.setBounds(54, 101, 97, 14);
-	    applicationFrame.getContentPane().add(lblArrangeBy);
-		
-		JTextField textField_1 = new JTextField();
-	    textField_1.setBounds(110, 59, 169, 20);
-	    applicationFrame.getContentPane().add(textField_1);
-	    textField_1.setColumns(10);
-	    
-	    JLabel lblDidYouMean = new JLabel("Did You Mean:");
-	    lblDidYouMean.setBounds(10, 62, 90, 14);
-	    applicationFrame.getContentPane().add(lblDidYouMean);*/
-		
-	    //DocumentListener listener = new DocumentListener()
-	    /*textField.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				 textField.setText("Welcome to Javatpoint.");  
-				
-			}
-	    	
-	    });*/
-		
-	    
+		try {		
+			RAMDirectory index_dir = new RAMDirectory();
+	        StandardAnalyzer analyzer = new StandardAnalyzer();
+	        AnalyzingInfixSuggester suggester = new AnalyzingInfixSuggester(index_dir, analyzer);
+	
+	        // Create our list of products.
+	        ArrayList<Word> words = new ArrayList<Word>();
+	        words.add(
+	            new Word(
+	                "Electric Guitar",
+	                "US",
+	                100));
+	        words.add(
+	        		new Word(
+	        		"Electric Train",
+	                "US",
+	                90));
+	        words.add(
+	        		new Word(
+	        		"Acoustic Guitar",
+	                "US",
+	                80));
+	        words.add(
+	        		new Word(
+	        		"Guarana Soda",
+	                "US",
+	                130));
+	        
+	        // Index the products with the suggester.
+	        suggester.build(new WordIterator(words.iterator()));
+	
+	        // Do some example lookups.
+	        lookup(suggester, "Gu", "US");
+	        lookup(suggester, "Gu", "US");
+	        lookup(suggester, "Gui", "US");
+	        lookup(suggester, "Electric guit", "US");
+	        
+	    } catch (IOException e) {
+	        System.err.println("Error!");
+	    }
 		
 	 	/*DeferredDocumentListener listener = new DeferredDocumentListener(1000, new ActionListener() {
             @Override
@@ -300,10 +386,10 @@ public class FrontPage {
 		//Queries q = new Queries();
 		//q.getStatistics();
 		
-		//PorterStemmer stemmer = new PorterStemmer();
+		//PorterStemFilter stemmer = new PorterStemFilter();
 	}
-	
-	/*public String backDoor(String word) throws IOException{
+	/*
+	public String backDoor(String word) throws IOException{
 		
 		CharArraySet stopWords = EnglishAnalyzer.getDefaultStopSet();
 

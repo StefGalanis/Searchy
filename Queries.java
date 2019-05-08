@@ -11,7 +11,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -19,6 +23,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 
 
 public class Queries {
@@ -44,8 +49,38 @@ public class Queries {
 		
 		this.indexdirectory = FSDirectory.open(indexDir);
 		this.indexreader = DirectoryReader.open(indexdirectory);
+		//Fields termEnum = indexreader.getTermVectors(2);
+		//TermsEnum termsenum = new TermsEnum();
+		
+		
+		
+		/*Document doc = indexreader.document(1);         
+	    System.out.println("Processing file: "+doc.get("name"));
+
+	    Terms termVector = indexreader.getTermVector(1, "name");
+	    TermsEnum itr = termVector.iterat;
+	    BytesRef term = null;
+	    System.out.println(itr.toString());
+	    while ((term = itr.next()) != null) {    
+	    	
+	    	String termText = term.utf8ToString();
+			Term termInstance = new Term("contents", term);                              
+			long termFreq = indexreader.totalTermFreq(termInstance);
+			long docCount = indexreader.docFreq(termInstance);
+			System.out.println("term: "+termText+", termFreq = "+termFreq+", docCount = "+docCount);
+	    }            
+
+	    
+		
+		
+		
+		
+		
+		//System.out.println(termEnum.toString());
+		Term temp = new Term("Zoo");
+		System.out.println(temp.toString() + "totaltermfreq " + indexreader.totalTermFreq(temp));*/
 		this.analyzer = new StandardAnalyzer();
-		System.out.println("The Number of Docs in this Index is :" + indexreader.numDocs());
+		//System.out.println("The Number of Docs in this Index is :" + indexreader.numDocs());
 		this.indexsearcher = new IndexSearcher(indexreader);
 		
 		//analyzer.
@@ -57,6 +92,10 @@ public class Queries {
 	
 	public Analyzer getAnalyzer() {
 		return this.analyzer;
+	}
+	
+	public Directory getDirectory() {
+		return this.indexdirectory;
 	}
 	
 	public void getStatistics() throws ParseException, IOException {
@@ -111,6 +150,10 @@ public class Queries {
 	    System.out.println("The Number of Docs Matched the Query : " + q.toString() + " was " + x.scoreDocs.length); //number of docs matched the query
 	    System.out.println("The Number of Docs indexed is : " + indexsearcher.count(q)); //number of docs indexed
 	    
+	}
+	
+	public static void main(String args[]) throws IOException {
+		Queries q = new Queries();
 	}
 	
 	/*public static void main (String args[]) throws IOException, ParseException {
