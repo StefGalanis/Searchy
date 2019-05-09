@@ -46,6 +46,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -90,7 +91,7 @@ public class IndexFile {
 	      
 	      Directory dir = FSDirectory.open(Paths.get(indexPath));
 	      //Directory reviewDir = FSDirectory.open(Paths.get(indexPath));
-	      Analyzer analyzer = new StandardAnalyzer();
+	      Analyzer analyzer = new EnglishAnalyzer();
 	      IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 	      //Tokenizer
 	      if (create) {
@@ -304,7 +305,7 @@ public class IndexFile {
 						doc.add(new TextField("text",text, Field.Store.YES));
 						
 						business_id = (String) jsonObject.get("business_id");
-					    doc.add(new TextField("business_id",business_id,  Field.Store.YES));
+					    doc.add(new TextField("review_id",business_id,  Field.Store.YES));
 					    
 					    stars = (double) jsonObject.getDouble("stars");
 					    doc.add(new DoublePoint("stars",stars));
@@ -313,7 +314,7 @@ public class IndexFile {
 					else {
 						
 						business_id =(String) jsonObject.getString("business_id");
-						doc.add(new TextField("review_id",business_id, Field.Store.YES));
+						doc.add(new TextField("tip_id",business_id, Field.Store.YES));
 						
 						text = (String) jsonObject.getString("text");
 						doc.add(new TextField("text",text, Field.Store.YES));

@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.IntPoint;
@@ -79,7 +80,7 @@ public class Queries {
 		//System.out.println(termEnum.toString());
 		Term temp = new Term("Zoo");
 		System.out.println(temp.toString() + "totaltermfreq " + indexreader.totalTermFreq(temp));*/
-		this.analyzer = new StandardAnalyzer();
+		this.analyzer = new EnglishAnalyzer();
 		//System.out.println("The Number of Docs in this Index is :" + indexreader.numDocs());
 		this.indexsearcher = new IndexSearcher(indexreader);
 		

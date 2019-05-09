@@ -1,12 +1,16 @@
 package anakthsh;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.ScrollPane;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -16,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,9 +49,11 @@ import javax.swing.event.DocumentListener;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -63,6 +70,7 @@ import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.Version;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -94,6 +102,7 @@ public class FrontPage {
 				
 				applicationFrame.setTitle("	Uptown World");
 				applicationFrame.setBounds(100,100,1200,772);
+				applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				applicationFrame.setBackground(Color.BLACK);
 				applicationFrame.getContentPane().setBackground(new Color(0, 114, 125));
 				
@@ -152,7 +161,11 @@ public class FrontPage {
 			    name.setBackground(new Color(0, 114, 125));
 			    name.setForeground(Color.white);
 			    applicationFrame.getContentPane().add(name);
-				
+				//Panel
+			    JPanel resultsPanel = new JPanel();
+			    //p.add(new JTextField("some text"));
+			    //resultsPanel.setSize(500,892);
+			    //applicationFrame.getContentPane().add(p);
 				//Search button
 				button.setBackground(Color.gray);
 				button.setForeground(new Color(0, 0, 0));
@@ -161,12 +174,15 @@ public class FrontPage {
 				applicationFrame.getRootPane().setDefaultButton(button);
 				applicationFrame.getContentPane().add(button);//adding button in JFrame
 				
-				button.addActionListener(new ActionListener() {
+				
+				
+				ActionListener actionlistener = new ActionListener() {
 
 					@Override
 					public void actionPerformed(ActionEvent arg0) {
-						JPanel view = new JPanel();
+						//JPanel view = new JPanel();
 						Queries q = null;
+						resultsPanel.removeAll();
 						try {
 							q = new Queries();
 						} catch (IOException e) {
@@ -174,19 +190,29 @@ public class FrontPage {
 						}
 						
 						Analyzer analyzer = q.getAnalyzer();
+						//EnglishAnalyzer analyzer = new EnglishAnalyzer();
+						//TokenStream stream = analyzer.tokenStream("categories", textField.getText().toLowerCase());
+						//System.out.println(stream.toString());
+						//System.exit(1);
 						IndexSearcher indexsearcher = q.getSearcher();
 						
 						button.setText("Search Again");
 						
 						QueryParser categoryParser = new QueryParser("categories", analyzer);
 						QueryParser nameParser = new QueryParser("name", analyzer);
+						QueryParser textParser = new QueryParser("text", analyzer);
+						QueryParser locationParser = new QueryParser("city",analyzer);
 						
 						Builder categoryQuery = new BooleanQuery.Builder();
 						
 						
 						Query catquery = null;
 						Query catQuery2 = null;
+						Query textquery = null;
+						Query locationQuery = null;
 						try {
+							//locationQuery = locationParser.parse("phoenix");
+							//categoryQuery.add(new BooleanClause(locationQuery, BooleanClause.Occur.MUST));
 							if(name.isSelected()) {
 								catQuery2 = nameParser.parse(textField.getText().toLowerCase());
 								categoryQuery.add(new BooleanClause(catQuery2, BooleanClause.Occur.MUST));
@@ -194,6 +220,15 @@ public class FrontPage {
 							if(category.isSelected()) {
 								catquery = categoryParser.parse(textField.getText().toLowerCase());
 								categoryQuery.add(new BooleanClause(catquery, BooleanClause.Occur.MUST));
+							}
+							if(text.isSelected() && (!name.isSelected()) && (!category.isSelected())) {
+								textquery = textParser.parse(textField.getText().toLowerCase());
+								categoryQuery.add(new BooleanClause(textquery, BooleanClause.Occur.MUST));
+							}
+							if(text.isSelected() && (name.isSelected() || category.isSelected())) {
+								textquery = textParser.parse(textField.getText().toLowerCase());
+								//categoryQuery.add(new BooleanClause(textquery, BooleanClause.Occur.MUST));
+								
 							}
 						} catch (ParseException e1) {
 							// TODO Auto-generated catch block
@@ -214,21 +249,16 @@ public class FrontPage {
 						
 						
 						//QueryParser categoryParser = new QueryParser("categories", analyzer);
-						QueryParser textParser = new QueryParser("text", analyzer);
-						Query query = null;
+						
+						QueryParser query = null;
 						//String searchText = "name:" + textField.getText().toLowerCase() + " city:phoenix";
 						//System.out.println(searchText);
-						/*
-						try {
-						 
-							query = new QueryParser("name", analyzer).parse(searchText);
-						} catch (ParseException e) {
-							e.printStackTrace();
-						}
-						*/
+						
+						query = new QueryParser("business_id", analyzer);
+						
 						TopDocs x = null;
 						try {
-							x = indexsearcher.search(boolquery, 10);
+							x = indexsearcher.search(boolquery, 50);
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -236,11 +266,16 @@ public class FrontPage {
 						System.out.println(x.totalHits);
 						//System.exit(1);
 						//JList<Component> list = new JList();
-						String text = "";
+						String infotext = "";
+						
+						
 						if(x.totalHits.value != 0) {
+							ArrayList<String> idList = new ArrayList<String>();
+							idList.clear();
+							idList.add("0");
 							for (int i = 0; i < x.totalHits.value; i++) {
 								
-								if(i == 10) {break;}
+								if(i == 20 || idList.size()-1 > 10) {break;}
 								Document doc = null;
 								try {
 									doc = indexsearcher.doc(x.scoreDocs[i].doc);
@@ -248,31 +283,89 @@ public class FrontPage {
 									e.printStackTrace();
 								}
 								
+								if(text.isSelected()) {
+									Query idquery = null;
+									TopDocs idmatch = null;
+									try {
+										if(!idList.contains((String)doc.getField("review_id").stringValue())) {
+											idquery = query.parse((String)doc.getField("review_id").stringValue());// parolo poy leei review_id h timh toy einai business_id
+										 	idList.add((String)doc.getField("review_id").stringValue());
+										}
+									}
+									catch (ParseException e) {
+											e.printStackTrace();
+									}
+									try {
+										idmatch = indexsearcher.search(idquery, 1);
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+									System.out.println("before the null pointer" + idmatch.toString());
+									try {
+										//System.out.println("i got in");
+										doc = indexsearcher.doc(idmatch.scoreDocs[0].doc);
+										System.out.println(doc.getFields().toString());
+										//System.out.println("i got in");
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+								}
 								String info =  "<h3>" + (String)doc.getField("name").stringValue() + "</h3>" +
 											"Location:  " + (String)doc.getField("city").stringValue() + "<br>"
 											 + "<font style=\" color:#83a7ff \"> " 
 											+"<strong>" + "categories: " + "</strong>" + (String)doc.getField("categories").stringValue()   + "<hr>";
 								//view.add(new textField())
-								text = text + info;
+								JEditorPane tempField = new JEditorPane();
+								resultsPanel.add(tempField);
+								
+								tempField.setSize(200, 200);
+								tempField.setContentType("text/html");
+								tempField.setText(info);
+								infotext = infotext + info;
 								//JLabel tempLabel = new JLabel(info);
 								//list.add(tempLabel);
 								//list.add(x)
 							}
 						}
 						else {
-							text = "NO RESULTS TRY AGAIN";
+							infotext = "NO RESULTS TRY AGAIN";
 						}
+						resultsPanel.revalidate();
 						//System.out.println(list.getComponentCount());
 						editorPane.setEditable(false);
 						editorPane.setContentType("text/html");
-						editorPane.setText(text);
+						editorPane.setText(infotext);
 						editorPane.setCaretPosition(0);
 						System.out.println(editorPane.getText().toString());
 						boolquery = null;
 						
 					}
 					
-				});
+				};
+				
+				
+				
+				
+				
+				
+				button.addActionListener(actionlistener);
+				DeferredDocumentListener listener = new DeferredDocumentListener(3000 , actionlistener,true);
+				textField.getDocument().addDocumentListener(listener);
+				textField.addFocusListener(new FocusListener() {
+		            @Override
+		            public void focusGained(FocusEvent e) {
+		                listener.start();
+		            }
+
+		            @Override
+		            public void focusLost(FocusEvent e) {
+		                listener.stop();
+		            }
+		        });
+
+				//textField.addActionListener(listener);
 				applicationFrame.getContentPane().add(button);
 				// Load Icon
 				String fileName = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\worldtown.jpg";
@@ -284,7 +377,9 @@ public class FrontPage {
 		        applicationFrame.getContentPane().add(label);
 		        applicationFrame.setIconImage(icon.getImage());
 				// ScrollPane
-				JScrollPane scrollpane = new JScrollPane(editorPane);
+		        
+				JScrollPane scrollpane = new JScrollPane();
+				scrollpane.getViewport().setView(resultsPanel);
 				scrollpane.setBounds(210,180,892,500);
 			    applicationFrame.getContentPane().add(scrollpane);
 			    
@@ -292,6 +387,35 @@ public class FrontPage {
 				applicationFrame.setVisible(true);//making the frame visible 
 				
 	}
+	
+	
+	/*
+	public static String stem(String string) throws IOException {
+	    TokenStream tokenizer = new StandardTokenizer();
+	    tokenizer = new StandardFilter(Version.LUCENE_8_0_0, tokenizer);
+	    tokenizer = new LowerCaseFilter(Version.LUCENE_8_0_0, tokenizer);
+	    tokenizer = new PorterStemFilter(tokenizer);
+
+	    CharTermAttribute token = tokenizer.getAttribute(CharTermAttribute.class);
+
+	    tokenizer.reset();
+
+	    StringBuilder stringBuilder = new StringBuilder();
+
+	    while(tokenizer.incrementToken()) {
+	        if(stringBuilder.length() > 0 ) {
+	            stringBuilder.append(" ");
+	        }
+
+	        stringBuilder.append(token.toString());
+	    }
+
+	    tokenizer.end();
+	    tokenizer.close();
+
+	    return stringBuilder.toString();
+	}
+	*/
 	
 	public static void main(String[] args) throws IOException, ParseException {
 		//BufferedImage image;
@@ -338,7 +462,8 @@ public class FrontPage {
 	        System.err.println("Error!");
 	    }
 		
-	 	/*DeferredDocumentListener listener = new DeferredDocumentListener(1000, new ActionListener() {
+	 	/*
+	 	 * DeferredDocumentListener listener = new DeferredDocumentListener(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Execute your required functionality here...
