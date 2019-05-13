@@ -64,8 +64,15 @@ import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopFieldDocs;
+import org.apache.lucene.search.join.ParentChildrenBlockJoinQuery;
+import org.apache.lucene.search.join.QueryBitSetProducer;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
 import org.apache.lucene.store.RAMDirectory;
@@ -196,46 +203,64 @@ public class FrontPage {
 						//System.exit(1);
 						IndexSearcher indexsearcher = q.getSearcher();
 						
+						//ScoreDoc [] scoredoc  = null;
+						
 						button.setText("Search Again");
 						
 						QueryParser categoryParser = new QueryParser("categories", analyzer);
+						//QueryParser categoryParser2 = new QueryParser("categories", analyzer);
 						QueryParser nameParser = new QueryParser("name", analyzer);
 						QueryParser textParser = new QueryParser("text", analyzer);
 						QueryParser locationParser = new QueryParser("city",analyzer);
 						
-						Builder categoryQuery = new BooleanQuery.Builder();
+						Builder BooleanBuilder = new BooleanQuery.Builder();
 						
 						
-						Query catquery = null;
-						Query catQuery2 = null;
-						Query textquery = null;
+						Query categoryQuery = null;
+						//Query categoryQuery2 = null;
+						Query nameQuery = null;
+						Query textQuery = null;
 						Query locationQuery = null;
 						try {
-							//locationQuery = locationParser.parse("phoenix");
-							//categoryQuery.add(new BooleanClause(locationQuery, BooleanClause.Occur.MUST));
+							locationQuery = locationParser.parse("phoenix");
+							
 							if(name.isSelected()) {
-								catQuery2 = nameParser.parse(textField.getText().toLowerCase());
-								categoryQuery.add(new BooleanClause(catQuery2, BooleanClause.Occur.MUST));
+								nameQuery = nameParser.parse(textField.getText().toLowerCase());
+								BooleanBuilder.add(new BooleanClause(nameQuery, BooleanClause.Occur.MUST));
+								BooleanBuilder.add(new BooleanClause(locationQuery, BooleanClause.Occur.MUST));
 							}
 							if(category.isSelected()) {
-								catquery = categoryParser.parse(textField.getText().toLowerCase());
-								categoryQuery.add(new BooleanClause(catquery, BooleanClause.Occur.MUST));
+								//String [] terms = null;
+								//String = textToTrim;
+								//terms = textField.getText().toLowerCase().split(" ");
+								categoryQuery = categoryParser.parse(textField.getText().toLowerCase());
+								/*if(terms.length > 1) {
+									categoryQuery2 = categoryParser2.parse(terms[1]);
+									BooleanBuilder.add(new BooleanClause(categoryQuery2, BooleanClause.Occur.MUST));
+								}*/
+								BooleanBuilder.add(new BooleanClause(categoryQuery, BooleanClause.Occur.MUST));
+								
+								BooleanBuilder.add(new BooleanClause(locationQuery, BooleanClause.Occur.MUST));
 							}
 							if(text.isSelected() && (!name.isSelected()) && (!category.isSelected())) {
-								textquery = textParser.parse(textField.getText().toLowerCase());
-								categoryQuery.add(new BooleanClause(textquery, BooleanClause.Occur.MUST));
+								textQuery = textParser.parse(textField.getText().toLowerCase());
+								//BooleanBuilder.add(new BooleanClause(textQuery, BooleanClause.Occur.MUST));
 							}
-							if(text.isSelected() && (name.isSelected() || category.isSelected())) {
-								textquery = textParser.parse(textField.getText().toLowerCase());
-								//categoryQuery.add(new BooleanClause(textquery, BooleanClause.Occur.MUST));
+							/*
+							if(text.isSelected() && (name.isSelected() || category.isSelected())) {							 
+								textQuery = textParser.parse(textField.getText().toLowerCase());
+								BooleanBuilder.add(new BooleanClause(textQuery, BooleanClause.Occur.MUST));
+								nameQuery = nameParser.parse(textField.getText().toLowerCase());
+								BooleanBuilder.add(new BooleanClause(nameQuery, BooleanClause.Occur.MUST));
 								
 							}
+							*/
 						} catch (ParseException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
 						//System.out.println(boolquery.clauses().toString());
-						BooleanQuery boolquery = categoryQuery.build();
+						BooleanQuery booleanQuery = BooleanBuilder.build();
 						/*
 						Builder bq = new BooleanQuery.Builder();
 						TermQuery catQuery1 = new TermQuery(new Term("categories", textField.getText().toLowerCase().toString()));
@@ -257,13 +282,43 @@ public class FrontPage {
 						query = new QueryParser("business_id", analyzer);
 						
 						TopDocs x = null;
+					
+						SortField stars = new SortedNumericSortField("stars", SortField.Type.LONG, true);
+						SortField reviewNum = new SortedNumericSortField("review_num", SortField.Type.LONG, true);
+						
+						//SortField [] arraySort ;
+						//arraySort [0] = reviewNum;
+						
+						
+						
+						Sort sort = new Sort(stars);
+						Sort reviewSort = new Sort(reviewNum);
+						
+						//Sort sort = new Sort();
+						//sort.setSort((new SortedNumericSortField("review_count", SortField.Type.INT, true)));
+						System.out.println(sort.toString());
 						try {
-							x = indexsearcher.search(boolquery, 50);
+							x = indexsearcher.search(booleanQuery, 10000,sort);
+							//ScoreDoc scoredocs = x.merge(reviewSort, 1000, x);
+							//x = indexsearcher.searchAfter(scoredocs, booleanQuery, 10000, reviewSort);
+							//TopFieldDocs topfielddocs = new TopFieldDocs(x.totalHits,scoredocs,arraySort);
+							//x = x.merge(reviewSort,10000,topfielddocs);
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
-						System.out.println(boolquery.clauses().toString());
-						System.out.println(x.totalHits);
+						System.out.println(sort.toString());
+						//System.exit(1);
+						//scoredoc = x.scoreDocs;
+						//x = indexsearcher.searchAfter(scoredoc, locationQuery, 3);
+						//System.out.println(scoredoc[0].toString());
+						System.out.println(booleanQuery.clauses().toString());
+						QueryBitSetProducer ko = new QueryBitSetProducer(booleanQuery);
+						
+						System.out.println(x.totalHits + ko.toString());
+						ParentChildrenBlockJoinQuery join = new ParentChildrenBlockJoinQuery(ko, locationQuery, 0);
+						//for (int i = 0; i < x.totalHits.value; i++) {
+							//indexsearcher.searchAfter(after, query, numHits)
+						//}
 						//System.exit(1);
 						//JList<Component> list = new JList();
 						String infotext = "";
@@ -271,12 +326,21 @@ public class FrontPage {
 						
 						if(x.totalHits.value != 0) {
 							ArrayList<String> idList = new ArrayList<String>();
+							TopDocs idmatch = null;
+							//BooleanBuilder = new BooleanQuery.Builder(); //reInitialize the BooleanBuilder
 							idList.clear();
 							idList.add("0");
 							for (int i = 0; i < x.totalHits.value; i++) {
 								
-								if(i == 20 || idList.size()-1 > 10) {break;}
+								if (i == 20 || idList.size()-1 > 100) {
+									
+									break;
+									
+								}
+								
 								Document doc = null;
+								
+								
 								try {
 									doc = indexsearcher.doc(x.scoreDocs[i].doc);
 								} catch (IOException e) {
@@ -285,48 +349,75 @@ public class FrontPage {
 								
 								if(text.isSelected()) {
 									Query idquery = null;
-									TopDocs idmatch = null;
+									
+									//System.out.println("before if STATEMENT" + doc.getFields().toString());
 									try {
-										if(!idList.contains((String)doc.getField("review_id").stringValue())) {
-											idquery = query.parse((String)doc.getField("review_id").stringValue());// parolo poy leei review_id h timh toy einai business_id
-										 	idList.add((String)doc.getField("review_id").stringValue());
+										if(!idList.contains((String)doc.getField("id").stringValue())) {
+											idquery = query.parse((String)doc.getField("id").stringValue());// parolo poy leei review_id h timh toy einai business_id
+										 	nameQuery = nameParser.parse(textField.getText().toLowerCase());
+										 	BooleanBuilder.add(new BooleanClause(idquery, BooleanClause.Occur.MUST));
+										 	BooleanBuilder.add(new BooleanClause(nameQuery, BooleanClause.Occur.MUST));
+										 	booleanQuery = BooleanBuilder.build();
+											idList.add((String)doc.getField("id").stringValue());
+											System.out.println(idList.toString());
 										}
 									}
 									catch (ParseException e) {
 											e.printStackTrace();
 									}
+									
+									
 									try {
-										idmatch = indexsearcher.search(idquery, 1);
+										//if(!(idmatch == null)) {
+										idmatch = indexsearcher.search(booleanQuery, 1);
+										//}
 									} catch (IOException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();
 									}
-									System.out.println("before the null pointer" + idmatch.toString());
+									
+									
+									//System.out.println("before the null pointer" + idmatch.scoreDocs[0].doc.toString());
+									
+									
 									try {
-										//System.out.println("i got in");
+										System.out.println(idmatch.totalHits.value);
+										if(idmatch.totalHits.value != 0) {
 										doc = indexsearcher.doc(idmatch.scoreDocs[0].doc);
 										System.out.println(doc.getFields().toString());
+										}
 										//System.out.println("i got in");
 									} catch (IOException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();
 									}
+									
+									
 								}
+								/*
+								if(text.isSelected() && name.isSelected()) {
+									
+								}
+								*/
+								//if (idmatch.totalHits.value != 0) {
+								System.out.println(doc.getFields().toString());
 								String info =  "<h3>" + (String)doc.getField("name").stringValue() + "</h3>" +
-											"Location:  " + (String)doc.getField("city").stringValue() + "<br>"
-											 + "<font style=\" color:#83a7ff \"> " 
+											"Location:  " + (String)doc.getField("city").stringValue() + "<br>" +
+											"STARS:  " + (String)doc.getField("stars_value").stringValue()
+											 + "<font style=\" color:#83a7ff \"> "
 											+"<strong>" + "categories: " + "</strong>" + (String)doc.getField("categories").stringValue()   + "<hr>";
 								//view.add(new textField())
 								JEditorPane tempField = new JEditorPane();
 								resultsPanel.add(tempField);
 								
-								tempField.setSize(200, 200);
+								tempField.setSize(200, 200); //logika peritto
 								tempField.setContentType("text/html");
 								tempField.setText(info);
 								infotext = infotext + info;
 								//JLabel tempLabel = new JLabel(info);
 								//list.add(tempLabel);
 								//list.add(x)
+								//}
 							}
 						}
 						else {
@@ -339,7 +430,7 @@ public class FrontPage {
 						editorPane.setText(infotext);
 						editorPane.setCaretPosition(0);
 						System.out.println(editorPane.getText().toString());
-						boolquery = null;
+						booleanQuery = null;
 						
 					}
 					
@@ -379,7 +470,7 @@ public class FrontPage {
 				// ScrollPane
 		        
 				JScrollPane scrollpane = new JScrollPane();
-				scrollpane.getViewport().setView(resultsPanel);
+				scrollpane.getViewport().setView(editorPane);
 				scrollpane.setBounds(210,180,892,500);
 			    applicationFrame.getContentPane().add(scrollpane);
 			    

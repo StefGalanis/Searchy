@@ -20,8 +20,11 @@ import java.util.Date;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.NumericDocValuesField;
+import org.apache.lucene.document.SortedNumericDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoubleDocValuesField;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntPoint;
@@ -31,6 +34,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.IndexableFieldType;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -50,6 +54,7 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.util.NumericUtils;
 //import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.util.Version;
 import org.json.JSONArray;
@@ -201,7 +206,7 @@ public class IndexFile {
 				String city = null;
 				String categories  = null;
 				int review_count;
-				double stars;
+				float stars;
 				
 			//REVIEWDOCS FIELDS
 				
@@ -289,10 +294,17 @@ public class IndexFile {
 						else {
 							doc.add(new TextField("categories","no category",  Field.Store.YES));
 						}*/
-						stars = (double) jsonObject.getDouble("stars");
-						doc.add(new DoublePoint("stars",stars));
+						stars = (float) jsonObject.getDouble("stars");
+						//doc.add(new StoredField("stars",stars, ));
+						//doc.add(new Field());
+						
+						doc.add(new SortedNumericDocValuesField("stars", NumericUtils.floatToSortableInt(stars)));
+						//System.out.println(doc.getField("stars").stringValue());
+						//System.exit(1);
+						doc.add(new StoredField("stars_value",stars));
 					    
 					    review_count = (int) jsonObject.get("review_count");
+					    doc.add(new SortedNumericDocValuesField("review_num", review_count));
 					    doc.add(new StoredField("review_count",review_count));
 					    
 					    //System.out.println("the review_count : " + review_count + " these are the fields: " + doc.getFields());
@@ -305,16 +317,16 @@ public class IndexFile {
 						doc.add(new TextField("text",text, Field.Store.YES));
 						
 						business_id = (String) jsonObject.get("business_id");
-					    doc.add(new TextField("review_id",business_id,  Field.Store.YES));
+					    doc.add(new TextField("id",business_id,  Field.Store.YES));
 					    
-					    stars = (double) jsonObject.getDouble("stars");
-					    doc.add(new DoublePoint("stars",stars));
+					    //stars = (float) jsonObject.getDouble("stars");
+					    //doc.add(new DoublePoint("stars",stars));
 					    //doc.add(new TextField("stars",stars,Field.Store.YES));
 					}
 					else {
 						
 						business_id =(String) jsonObject.getString("business_id");
-						doc.add(new TextField("tip_id",business_id, Field.Store.YES));
+						doc.add(new TextField("id",business_id, Field.Store.YES));
 						
 						text = (String) jsonObject.getString("text");
 						doc.add(new TextField("text",text, Field.Store.YES));
