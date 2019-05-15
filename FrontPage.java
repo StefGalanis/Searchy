@@ -55,6 +55,7 @@ import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -71,6 +72,15 @@ import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
+import org.apache.lucene.search.highlight.Formatter;
+import org.apache.lucene.search.highlight.Fragmenter;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
+import org.apache.lucene.search.highlight.TextFragment;
+import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.join.ParentChildrenBlockJoinQuery;
 import org.apache.lucene.search.join.QueryBitSetProducer;
 import org.apache.lucene.search.suggest.Lookup;
@@ -143,6 +153,12 @@ public class FrontPage {
 			    filterLabel.setFont(new Font("Serif", Font.BOLD, 20));
 			    filterLabel.setForeground(Color.white);
 			    applicationFrame.getContentPane().add(filterLabel);
+			    JCheckBox arrangeByStars = new JCheckBox("Stars");
+			    arrangeByStars.setBounds(50, 180, 100, 40);
+			    arrangeByStars.setFont(new Font("Serif", Font.BOLD, 20));
+			    arrangeByStars.setBackground(new Color(0, 114, 125));
+			    arrangeByStars.setForeground(Color.white);
+			    applicationFrame.getContentPane().add(arrangeByStars);
 			    //RadioButtons Label Search BY
 			    JLabel radioLabel = new JLabel("Search By:");
 			    radioLabel.setBounds(210, 100, 110, 40);
@@ -203,6 +219,8 @@ public class FrontPage {
 						//System.exit(1);
 						IndexSearcher indexsearcher = q.getSearcher();
 						
+						IndexReader reader = q.getIndexReader();
+						
 						//ScoreDoc [] scoredoc  = null;
 						
 						button.setText("Search Again");
@@ -244,7 +262,7 @@ public class FrontPage {
 							}
 							if(text.isSelected() && (!name.isSelected()) && (!category.isSelected())) {
 								textQuery = textParser.parse(textField.getText().toLowerCase());
-								//BooleanBuilder.add(new BooleanClause(textQuery, BooleanClause.Occur.MUST));
+								BooleanBuilder.add(new BooleanClause(textQuery, BooleanClause.Occur.MUST));
 							}
 							/*
 							if(text.isSelected() && (name.isSelected() || category.isSelected())) {							 
@@ -282,6 +300,11 @@ public class FrontPage {
 						query = new QueryParser("business_id", analyzer);
 						
 						TopDocs x = null;
+						TopFieldDocs  y= null;
+						TopFieldDocs [] array = null; 
+						//array[0] = x;
+						//array[1] = y;
+						
 					
 						SortField stars = new SortedNumericSortField("stars", SortField.Type.LONG, true);
 						SortField reviewNum = new SortedNumericSortField("review_num", SortField.Type.LONG, true);
@@ -291,26 +314,41 @@ public class FrontPage {
 						
 						
 						
-						Sort sort = new Sort(stars);
+						Sort sort = new Sort(stars,reviewNum);
 						Sort reviewSort = new Sort(reviewNum);
 						
-						//Sort sort = new Sort();
-						//sort.setSort((new SortedNumericSortField("review_count", SortField.Type.INT, true)));
+						
 						System.out.println(sort.toString());
-						try {
-							x = indexsearcher.search(booleanQuery, 10000,sort);
-							//ScoreDoc scoredocs = x.merge(reviewSort, 1000, x);
-							//x = indexsearcher.searchAfter(scoredocs, booleanQuery, 10000, reviewSort);
-							//TopFieldDocs topfielddocs = new TopFieldDocs(x.totalHits,scoredocs,arraySort);
-							//x = x.merge(reviewSort,10000,topfielddocs);
-						} catch (IOException e) {
-							e.printStackTrace();
+						if(arrangeByStars.isSelected()) {
+							
+							try {
+								x = indexsearcher.search(booleanQuery, 10000, sort);
+								
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							
 						}
+						else {
+							try {
+								x = indexsearcher.search(booleanQuery, 10000);
+								
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							
+						}
+						
+						SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
+						Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(booleanQuery));
+						/*Formatter formatter = new SimpleHTMLFormatter();
+						QueryScorer scorer = new QueryScorer(booleanQuery);
+						Highlighter highlighter = new Highlighter(formatter, scorer);
+						Fragmenter fragmenter = new SimpleSpanFragmenter(scorer, 10);
+						highlighter.setTextFragmenter(fragmenter);
+						*/
 						System.out.println(sort.toString());
-						//System.exit(1);
-						//scoredoc = x.scoreDocs;
-						//x = indexsearcher.searchAfter(scoredoc, locationQuery, 3);
-						//System.out.println(scoredoc[0].toString());
+						
 						System.out.println(booleanQuery.clauses().toString());
 						QueryBitSetProducer ko = new QueryBitSetProducer(booleanQuery);
 						
@@ -326,7 +364,11 @@ public class FrontPage {
 						
 						if(x.totalHits.value != 0) {
 							ArrayList<String> idList = new ArrayList<String>();
+							//test
+							TopFieldDocs [] shardHits = new TopFieldDocs[30];
+							//test
 							TopDocs idmatch = null;
+							//TopDocs [] matchesToSort = null;
 							//BooleanBuilder = new BooleanQuery.Builder(); //reInitialize the BooleanBuilder
 							idList.clear();
 							idList.add("0");
@@ -347,82 +389,187 @@ public class FrontPage {
 									e.printStackTrace();
 								}
 								
+								
+								//String docText = (String)doc.getField("text").stringValue();
+								
+								TokenStream nameTokenStream = null;
+								TokenStream categoriesTokenStream = null;
+								//TokenStream textTokenStream = null;
+								
+								/*  NOT YET SHOWING CRITICS SO NO NEED TO HIGHLIGHT TEXT LIKE THAT
 								if(text.isSelected()) {
-									Query idquery = null;
-									
-									//System.out.println("before if STATEMENT" + doc.getFields().toString());
 									try {
-										if(!idList.contains((String)doc.getField("id").stringValue())) {
-											idquery = query.parse((String)doc.getField("id").stringValue());// parolo poy leei review_id h timh toy einai business_id
-										 	nameQuery = nameParser.parse(textField.getText().toLowerCase());
-										 	BooleanBuilder.add(new BooleanClause(idquery, BooleanClause.Occur.MUST));
-										 	BooleanBuilder.add(new BooleanClause(nameQuery, BooleanClause.Occur.MUST));
-										 	booleanQuery = BooleanBuilder.build();
-											idList.add((String)doc.getField("id").stringValue());
-											System.out.println(idList.toString());
-										}
+										textTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "text", analyzer);
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
 									}
-									catch (ParseException e) {
+							    	TextFragment[] textFrag = null;
+							    	 try {
+							    		 textFrag = highlighter.getBestTextFragments(categoriesTokenStream, docCategories, false, 20);
+										} catch (IOException | InvalidTokenOffsetsException e2) {
+											// TODO Auto-generated catch block
+											e2.printStackTrace();
+										}
+							    	//String docName = null;
+								    for (int j = 0; j < textFrag.length; j++) {
+								        if ((textFrag[j] != null) && (textFrag[j].getScore() > 0)) {
+								        	docCategories = textFrag[j].toString();
+								        	System.out.println((textFrag[j].toString()));
+								        }
+								      }
+								    
+								}*/
+									//System.exit(1);
+								if(text.isSelected()) {
+									
+										Query idquery = null;
+										
+										//System.out.println("before if STATEMENT" + doc.getFields().toString());
+										try {
+											if(!idList.contains((String)doc.getField("id").stringValue())) {
+												idquery = query.parse((String)doc.getField("id").stringValue());// parolo poy leei review_id h timh toy einai business_id
+											 	//nameQuery = nameParser.parse(textField.getText().toLowerCase());
+											 	//BooleanBuilder.add(new BooleanClause(idquery, BooleanClause.Occur.MUST));
+											 	//BooleanBuilder.add(new BooleanClause(nameQuery, BooleanClause.Occur.MUST));
+											 	//booleanQuery = BooleanBuilder.build();
+												idList.add((String)doc.getField("id").stringValue());
+												System.out.println(idList.toString());
+											}
+										}
+										catch (ParseException e) {
+												e.printStackTrace();
+										}
+										
+										
+										try {
+											//if(!(idmatch == null)) {
+											idmatch = indexsearcher.search(idquery, 1);
+											//test
+											//shardHits[i] = idmatch.get;
+											//test
+											//}
+										} catch (IOException e) {
+											// TODO Auto-generated catch block
 											e.printStackTrace();
-									}
-									
-									
-									try {
-										//if(!(idmatch == null)) {
-										idmatch = indexsearcher.search(booleanQuery, 1);
-										//}
-									} catch (IOException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-									
-									
-									//System.out.println("before the null pointer" + idmatch.scoreDocs[0].doc.toString());
-									
-									
-									try {
-										System.out.println(idmatch.totalHits.value);
-										if(idmatch.totalHits.value != 0) {
-										doc = indexsearcher.doc(idmatch.scoreDocs[0].doc);
-										System.out.println(doc.getFields().toString());
 										}
-										//System.out.println("i got in");
-									} catch (IOException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
+										
+										
+										//System.out.println("before the null pointer" + idmatch.scoreDocs[0].doc.toString());
+										
+										
+										try {
+											System.out.println(idmatch.totalHits.value);
+											if(idmatch.totalHits.value != 0) {
+											doc = indexsearcher.doc(idmatch.scoreDocs[0].doc);
+											System.out.println(doc.getFields().toString());
+											}
+											//System.out.println("i got in");
+										} catch (IOException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+										}
+										if (idmatch.totalHits.value != 0) {
+											System.out.println(doc.getFields().toString());
+											String info =  "<p>" + (String)doc.getField("name").stringValue() + "</p>" +
+														"  LOCATION:  " + (String)doc.getField("city").stringValue() + "<br>" +
+														"   STARS:  " + (String)doc.getField("stars_value").stringValue() + "<br>" +
+														"   CATEGORIES:   " + (String)doc.getField("categories").stringValue()   + "<hr>";
+											infotext = infotext + info;
+										}
 									
 									
 								}
+								if(category.isSelected() || name.isSelected()) {
+									
+										String docName = (String)doc.getField("name").stringValue();
+										String docCategories = (String)doc.getField("categories").stringValue();
+										
+										if(category.isSelected()) {
+											try {
+												categoriesTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "categories", analyzer);
+											} catch (IOException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+									    	TextFragment[] categoriesFrag = null;
+									    	 try {
+									    		 categoriesFrag = highlighter.getBestTextFragments(categoriesTokenStream, docCategories, false, 20);
+												} catch (IOException | InvalidTokenOffsetsException e2) {
+													// TODO Auto-generated catch block
+													e2.printStackTrace();
+												}
+									    	//String docName = null;
+										    for (int j = 0; j < categoriesFrag.length; j++) {
+										        if ((categoriesFrag[j] != null) && (categoriesFrag[j].getScore() > 0)) {
+										        	docCategories = categoriesFrag[j].toString();
+										        	System.out.println((categoriesFrag[j].toString()));
+										        }
+										      }
+										    
+										}
+									    if(name.isSelected()) {
+									    	try {
+												nameTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "name", analyzer);
+											} catch (IOException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+									    	TextFragment[] nameFrag = null;
+									    	 try {
+													nameFrag = highlighter.getBestTextFragments(nameTokenStream, docName, false, 20);
+												} catch (IOException | InvalidTokenOffsetsException e2) {
+													// TODO Auto-generated catch block
+													e2.printStackTrace();
+												}
+									    	//String docName = null;
+										    for (int j = 0; j < nameFrag.length; j++) {
+										        if ((nameFrag[j] != null) && (nameFrag[j].getScore() > 0)) {
+										        	docName = nameFrag[j].toString();
+										        	System.out.println((nameFrag[j].toString()));
+										        }
+										      }
+										    
+										}
+									   
+									    String info =  "<p>" + docName + "</p>" +
+												"  LOCATION:  " + (String)doc.getField("city").stringValue() + "<br>" +
+												"   STARS:  " + (String)doc.getField("stars_value").stringValue() + "<br>" +
+												"   CATEGORIES:   " + docCategories   + "<hr>";
+									    infotext = infotext + info;
+								}
+								
 								/*
 								if(text.isSelected() && name.isSelected()) {
 									
 								}
 								*/
-								//if (idmatch.totalHits.value != 0) {
-								System.out.println(doc.getFields().toString());
-								String info =  "<h3>" + (String)doc.getField("name").stringValue() + "</h3>" +
-											"Location:  " + (String)doc.getField("city").stringValue() + "<br>" +
-											"STARS:  " + (String)doc.getField("stars_value").stringValue()
-											 + "<font style=\" color:#83a7ff \"> "
-											+"<strong>" + "categories: " + "</strong>" + (String)doc.getField("categories").stringValue()   + "<hr>";
+								
 								//view.add(new textField())
 								JEditorPane tempField = new JEditorPane();
 								resultsPanel.add(tempField);
 								
 								tempField.setSize(200, 200); //logika peritto
 								tempField.setContentType("text/html");
-								tempField.setText(info);
-								infotext = infotext + info;
+								//tempField.setText(info);
+								//infotext = infotext + info;
 								//JLabel tempLabel = new JLabel(info);
 								//list.add(tempLabel);
 								//list.add(x)
-								//}
-							}
+								}
+							
+							
+							/*testarea
+							//TopDocs [] anArray = (TopDocs[]) shardHits.toArray(); 
+							TopDocs temp = null;
+							temp = TopDocs.merge(null, 2, shardHits);
+							System.out.println(temp.toString());
+							testarea*/
 						}
 						else {
 							infotext = "NO RESULTS TRY AGAIN";
 						}
+						
 						resultsPanel.revalidate();
 						//System.out.println(list.getComponentCount());
 						editorPane.setEditable(false);

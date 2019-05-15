@@ -98,7 +98,9 @@ public class Queries {
 	public Directory getDirectory() {
 		return this.indexdirectory;
 	}
-	
+	public IndexReader getIndexReader() {
+		return this.indexreader;
+	}
 	public void getStatistics() throws ParseException, IOException {
 		
 		System.out.println("i am in");
