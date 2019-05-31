@@ -54,6 +54,8 @@ import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -80,6 +82,7 @@ import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.search.highlight.TextFragment;
+import org.apache.lucene.search.highlight.TokenGroup;
 import org.apache.lucene.search.highlight.TokenSources;
 import org.apache.lucene.search.join.ParentChildrenBlockJoinQuery;
 import org.apache.lucene.search.join.QueryBitSetProducer;
@@ -340,6 +343,7 @@ public class FrontPage {
 						}
 						
 						SimpleHTMLFormatter htmlFormatter = new SimpleHTMLFormatter();
+						//htmlFormatter.highlightTerm(originalText, tokenGroup)
 						Highlighter highlighter = new Highlighter(htmlFormatter, new QueryScorer(booleanQuery));
 						/*Formatter formatter = new SimpleHTMLFormatter();
 						QueryScorer scorer = new QueryScorer(booleanQuery);
@@ -469,9 +473,68 @@ public class FrontPage {
 											// TODO Auto-generated catch block
 											e.printStackTrace();
 										}
+										
 										if (idmatch.totalHits.value != 0) {
+											String title = (String)doc.getField("name").stringValue();
+											TokenStream ts = analyzer.tokenStream("name", title);
+											TextFragment[] frag = null;
+											try {
+												frag = highlighter.getBestTextFragments(ts, title, false, 4);
+											} catch (IOException | InvalidTokenOffsetsException e1) {
+												// TODO Auto-generated catch block
+												e1.printStackTrace();
+											}
+											 for (int j = 0; j < frag.length; j++) {
+											        if ((frag[j] != null) && (frag[j].getScore() > 0)) {
+											        	title = frag[j].toString();
+											        	System.out.println((frag[j].toString()));
+											        }
+											      }
+											//TokenGroup tkg = new TokenGroup(ts);
+											System.out.println(title);
+											//title = htmlFormatter.highlightTerm(textField.getText().toLowerCase(), tkg);
+											//OffsetAttribute offsetAttribute = ts.addAttribute(OffsetAttribute.class);
+											//CharTermAttribute charTermAttribute = ts.addAttribute(CharTermAttribute.class);
+											/*
+											try {
+												ts.reset();
+											} catch (IOException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											
+											try {
+												while (ts.incrementToken()) {
+												    int startOffset = offsetAttribute.startOffset();
+												    int endOffset = offsetAttribute.endOffset();
+												    String term = charTermAttribute.toString();
+												    System.out.println(term);
+												}
+											} catch (IOException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											*/
+											/*
+											TokenGroup tkg = new TokenGroup(ts);
+											title = htmlFormatter.highlightTerm(textField.getText(), tkg);
+											try {
+												ts.close();
+											} catch (IOException e) {
+												// TODO Auto-generated catch block
+												e.printStackTrace();
+											}
+											System.out.println(title);
+											*/
+											//System.exit(1);
+											//String titleReplacement = "<B>" + textField.getText() + "</B>";
+											//System.out.println(titleReplacement);
+											//System.exit(1);
+											//title = title.replace(textField.getText(), titleReplacement);
+											//System.out.println(title);
+											//System.exit(1);
 											System.out.println(doc.getFields().toString());
-											String info =  "<p>" + (String)doc.getField("name").stringValue() + "</p>" +
+											String info =  "<p>" + title + "</p>" +
 														"  LOCATION:  " + (String)doc.getField("city").stringValue() + "<br>" +
 														"   STARS:  " + (String)doc.getField("stars_value").stringValue() + "<br>" +
 														"   CATEGORIES:   " + (String)doc.getField("categories").stringValue()   + "<hr>";
@@ -487,7 +550,7 @@ public class FrontPage {
 										
 										if(category.isSelected()) {
 											try {
-												categoriesTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "categories", analyzer);
+												categoriesTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "1", analyzer);
 											} catch (IOException e) {
 												// TODO Auto-generated catch block
 												e.printStackTrace();
