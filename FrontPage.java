@@ -428,120 +428,60 @@ public class FrontPage {
 								}*/
 									//System.exit(1);
 								if(text.isSelected()) {
+									String docName = (String)doc.getField("name").stringValue();
+									String docCategories = (String)doc.getField("categories").stringValue();
 									
-										Query idquery = null;
-										
-										//System.out.println("before if STATEMENT" + doc.getFields().toString());
-										try {
-											if(!idList.contains((String)doc.getField("id").stringValue())) {
-												idquery = query.parse((String)doc.getField("id").stringValue());// parolo poy leei review_id h timh toy einai business_id
-											 	//nameQuery = nameParser.parse(textField.getText().toLowerCase());
-											 	//BooleanBuilder.add(new BooleanClause(idquery, BooleanClause.Occur.MUST));
-											 	//BooleanBuilder.add(new BooleanClause(nameQuery, BooleanClause.Occur.MUST));
-											 	//booleanQuery = BooleanBuilder.build();
-												idList.add((String)doc.getField("id").stringValue());
-												System.out.println(idList.toString());
-											}
-										}
-										catch (ParseException e) {
-												e.printStackTrace();
-										}
-										
-										
-										try {
-											//if(!(idmatch == null)) {
-											idmatch = indexsearcher.search(idquery, 1);
-											//test
-											//shardHits[i] = idmatch.get;
-											//test
-											//}
-										} catch (IOException e) {
+									try {
+										categoriesTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "categories", analyzer);
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+							    	TextFragment[] categoriesFrag = null;
+							    	 try {
+							    		 categoriesFrag = highlighter.getBestTextFragments(categoriesTokenStream, docCategories, false, 20);
+										} catch (IOException | InvalidTokenOffsetsException e2) {
 											// TODO Auto-generated catch block
-											e.printStackTrace();
+											e2.printStackTrace();
 										}
-										
-										
-										//System.out.println("before the null pointer" + idmatch.scoreDocs[0].doc.toString());
-										
-										
-										try {
-											System.out.println(idmatch.totalHits.value);
-											if(idmatch.totalHits.value != 0) {
-											doc = indexsearcher.doc(idmatch.scoreDocs[0].doc);
-											System.out.println(doc.getFields().toString());
-											}
-											//System.out.println("i got in");
-										} catch (IOException e) {
+							    	//String docName = null;
+								    for (int j = 0; j < categoriesFrag.length; j++) {
+								        if ((categoriesFrag[j] != null) && (categoriesFrag[j].getScore() > 0)) {
+								        	docCategories = categoriesFrag[j].toString();
+								        	System.out.println((categoriesFrag[j].toString()));
+								        }
+								        //System.out.println(docCategories.toString());
+								        //System.exit(1);
+								    }
+								    
+								    try {
+										nameTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "name", analyzer);
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+							    	TextFragment[] nameFrag = null;
+							    	 try {
+											nameFrag = highlighter.getBestTextFragments(nameTokenStream, docName, false, 20);
+										} catch (IOException | InvalidTokenOffsetsException e2) {
 											// TODO Auto-generated catch block
-											e.printStackTrace();
+											e2.printStackTrace();
 										}
-										
-										if (idmatch.totalHits.value != 0) {
-											String title = (String)doc.getField("name").stringValue();
-											TokenStream ts = analyzer.tokenStream("name", title);
-											TextFragment[] frag = null;
-											try {
-												frag = highlighter.getBestTextFragments(ts, title, false, 4);
-											} catch (IOException | InvalidTokenOffsetsException e1) {
-												// TODO Auto-generated catch block
-												e1.printStackTrace();
-											}
-											 for (int j = 0; j < frag.length; j++) {
-											        if ((frag[j] != null) && (frag[j].getScore() > 0)) {
-											        	title = frag[j].toString();
-											        	System.out.println((frag[j].toString()));
-											        }
-											      }
-											//TokenGroup tkg = new TokenGroup(ts);
-											System.out.println(title);
-											//title = htmlFormatter.highlightTerm(textField.getText().toLowerCase(), tkg);
-											//OffsetAttribute offsetAttribute = ts.addAttribute(OffsetAttribute.class);
-											//CharTermAttribute charTermAttribute = ts.addAttribute(CharTermAttribute.class);
-											/*
-											try {
-												ts.reset();
-											} catch (IOException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
-											}
-											
-											try {
-												while (ts.incrementToken()) {
-												    int startOffset = offsetAttribute.startOffset();
-												    int endOffset = offsetAttribute.endOffset();
-												    String term = charTermAttribute.toString();
-												    System.out.println(term);
-												}
-											} catch (IOException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
-											}
-											*/
-											/*
-											TokenGroup tkg = new TokenGroup(ts);
-											title = htmlFormatter.highlightTerm(textField.getText(), tkg);
-											try {
-												ts.close();
-											} catch (IOException e) {
-												// TODO Auto-generated catch block
-												e.printStackTrace();
-											}
-											System.out.println(title);
-											*/
-											//System.exit(1);
-											//String titleReplacement = "<B>" + textField.getText() + "</B>";
-											//System.out.println(titleReplacement);
-											//System.exit(1);
-											//title = title.replace(textField.getText(), titleReplacement);
-											//System.out.println(title);
-											//System.exit(1);
-											System.out.println(doc.getFields().toString());
-											String info =  "<p>" + title + "</p>" +
-														"  LOCATION:  " + (String)doc.getField("city").stringValue() + "<br>" +
-														"   STARS:  " + (String)doc.getField("stars_value").stringValue() + "<br>" +
-														"   CATEGORIES:   " + (String)doc.getField("categories").stringValue()   + "<hr>";
-											infotext = infotext + info;
-										}
+							    	//String docName = null;
+								    for (int j = 0; j < nameFrag.length; j++) {
+								        if ((nameFrag[j] != null) && (nameFrag[j].getScore() > 0)) {
+								        	docName = nameFrag[j].toString();
+								        	System.out.println((nameFrag[j].toString()));
+								        }
+								    }
+								    
+								
+									
+									String info =  "<p>" + docName + "</p>" +
+											"  LOCATION:  " + (String)doc.getField("city").stringValue() + "<br>" +
+											"   STARS:  " + (String)doc.getField("stars_value").stringValue() + "<br>" +
+											"   CATEGORIES:   " + docCategories  + "<hr>";
+								    infotext = infotext + info;
 									
 									
 								}
