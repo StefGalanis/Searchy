@@ -69,7 +69,7 @@ public class IndexFile {
 		
 		String indexPath = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Index";
 				
-		String docsPath = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Data3";
+		String docsPath = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\Data5";
 		
 		//String reviewsPath = "C:\\Users\\ilias\\Desktop\\stefanos\\anakthsh\\reviewsData";
 		
@@ -254,7 +254,9 @@ public class IndexFile {
 	            if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
 	            	// New index, so we just add the document (no old document can be there):
 	            	//System.out.println("adding " + file);
-	            	if(file.getFileName().toString().equals("business.json")) {
+	            	if(file.getFileName().toString().equals("orderedFile.json")) {
+//	            		System.out.println(jsonObject.toString());
+//	            		System.exit(1);
 						//System.out.println(jsonObject.get("categories").toString());
 	            		name = (String) jsonObject.get("name");
 					    doc.add(new TextField("name",name,  Field.Store.YES));
@@ -265,6 +267,9 @@ public class IndexFile {
 						city = (String) jsonObject.get("city");
 						doc.add(new TextField("city",city,  Field.Store.YES));
 						
+						//NEWLY ADDED LINE 
+						text = (String) jsonObject.getString("text");
+						doc.add(new TextField("text",text, Field.Store.YES));
 						//System.out.println(jsonObject.get("categories").toString() +" |||| "+ jsonObject.get("stars").toString());
 						//System.exit(1);
 						//if(jsonObject.get("categories") == null){
@@ -311,7 +316,7 @@ public class IndexFile {
 					    //System.exit(1);
 					}
 					//System.exit(1);
-					else if(file.getFileName().toString().equals("review.json")) {
+					/*else if(file.getFileName().toString().equals("orderedTips.json")) {
 						
 						text = (String) jsonObject.getString("text");
 						doc.add(new TextField("text",text, Field.Store.YES));
@@ -322,15 +327,15 @@ public class IndexFile {
 					    //stars = (float) jsonObject.getDouble("stars");
 					    //doc.add(new DoublePoint("stars",stars));
 					    //doc.add(new TextField("stars",stars,Field.Store.YES));
-					}
-					else {
+					}*/
+					/*else {
 						
 						business_id =(String) jsonObject.getString("business_id");
 						doc.add(new TextField("id",business_id, Field.Store.YES));
 						
 						text = (String) jsonObject.getString("text");
 						doc.add(new TextField("text",text, Field.Store.YES));
-					}
+					}*/
 	            	
 	            	writer.addDocument(doc);
 	            	

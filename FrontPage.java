@@ -262,6 +262,8 @@ public class FrontPage {
 								BooleanBuilder.add(new BooleanClause(categoryQuery, BooleanClause.Occur.MUST));
 								
 								BooleanBuilder.add(new BooleanClause(locationQuery, BooleanClause.Occur.MUST));
+								System.out.println(BooleanBuilder.toString());
+								
 							}
 							if(text.isSelected() && (!name.isSelected()) && (!category.isSelected())) {
 								textQuery = textParser.parse(textField.getText().toLowerCase());
@@ -550,7 +552,7 @@ public class FrontPage {
 										
 										if(category.isSelected()) {
 											try {
-												categoriesTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "1", analyzer);
+												categoriesTokenStream = TokenSources.getAnyTokenStream(reader, x.scoreDocs[i].doc, "categories", analyzer);
 											} catch (IOException e) {
 												// TODO Auto-generated catch block
 												e.printStackTrace();
@@ -568,6 +570,8 @@ public class FrontPage {
 										        	docCategories = categoriesFrag[j].toString();
 										        	System.out.println((categoriesFrag[j].toString()));
 										        }
+										        //System.out.println(docCategories.toString());
+										        //System.exit(1);
 										      }
 										    
 										}
